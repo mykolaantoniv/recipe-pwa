@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
-import { type MealType } from "@/data/recipes";
-import { useAppStore } from "@/store/appStore";
+import { recipes, type MealType } from "@/data/recipes";
 import { useAppStore } from "@/store/appStore";
 import IngredientsSelector from "@/components/IngredientsSelector";
 import RecipeModal from "@/components/RecipeModal";
@@ -28,7 +27,8 @@ const CookNowPage = () => {
     toggleSavedRecipe,
     addToShoppingList,
     requireAuth,
-    addRecentIngredients, recipes } = useAppStore();
+    addRecentIngredients,
+  } = useAppStore();
 
   const [step, setStep] = useState<Step>("meal");
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null);

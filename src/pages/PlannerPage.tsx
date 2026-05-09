@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { type MealType } from "@/data/recipes";
+import { recipes, type MealType } from "@/data/recipes";
 import { useAppStore, type MealPlan, type ShoppingItem } from "@/store/appStore";
 import { CalendarDays, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +31,7 @@ interface MealSlot {
 
 const PlannerPage = () => {
   const navigate = useNavigate();
-  const { addMealPlan, addToShoppingList, requireAuth, addRecentIngredients, recipes } = useAppStore();
+  const { addMealPlan, addToShoppingList, requireAuth, addRecentIngredients } = useAppStore();
   const [days, setDays] = useState(3);
   const [selectedMeals, setSelectedMeals] = useState<MealType[]>(["сніданок", "обід", "вечеря"]);
   const [portions, setPortions] = useState(2);

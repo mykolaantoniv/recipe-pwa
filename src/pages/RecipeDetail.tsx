@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useAppStore } from "@/store/appStore";
+import { recipes } from "@/data/recipes";
 import { useAppStore } from "@/store/appStore";
 import { ArrowLeft, Heart, Clock, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
@@ -7,7 +7,6 @@ import { toast } from "sonner";
 const RecipeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { recipes } = useAppStore();
   const recipe = recipes.find((r) => r.id === id);
   const { savedRecipes, toggleSavedRecipe, addToShoppingList, requireAuth } = useAppStore();
 

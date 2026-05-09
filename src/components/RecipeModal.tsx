@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
-import { type Recipe } from "@/data/recipes";
-import { useAppStore } from "@/store/appStore";
+import { recipes, type Recipe } from "@/data/recipes";
 import { useAppStore } from "@/store/appStore";
 import { ArrowLeft, X, Heart, Clock, ShoppingCart, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +15,7 @@ const normalize = (s: string) => s.toLowerCase().trim();
 
 const RecipeModal = ({ recipeId, onClose, userIngredients }: RecipeModalProps) => {
   const recipe = recipeId ? recipes.find((r) => r.id === recipeId) : null;
-  const { savedRecipes, toggleSavedRecipe, addToShoppingList, requireAuth, shoppingList, recipes } = useAppStore();
+  const { savedRecipes, toggleSavedRecipe, addToShoppingList, requireAuth, shoppingList } = useAppStore();
 
   const hasContext = !!(userIngredients && userIngredients.length > 0);
 

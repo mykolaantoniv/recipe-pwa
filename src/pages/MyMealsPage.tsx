@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
+import { recipes } from "@/data/recipes";
 import RecipeModal from "@/components/RecipeModal";
 import { UtensilsCrossed, Trash2, ChevronRight, Heart } from "lucide-react";
 
@@ -7,7 +8,8 @@ type Tab = "plans" | "saved";
 
 const MyMealsPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("plans");
-  const { mealPlans, removeMealPlan, savedRecipes, toggleSavedRecipe, recipes } = useAppStore();
+  const { mealPlans, removeMealPlan, savedRecipes, toggleSavedRecipe } =
+    useAppStore();
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);
 
   const saved = recipes.filter((r) => savedRecipes.includes(r.id));

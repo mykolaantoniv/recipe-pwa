@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { type MealType } from "@/data/recipes";
-import { useAppStore } from "@/store/appStore";
+import { recipes, type MealType } from "@/data/recipes";
 import { useAppStore } from "@/store/appStore";
 import { Search, Check, X, ChevronDown, Sparkles, Zap } from "lucide-react";
 
@@ -45,10 +44,9 @@ const IngredientsSelector = ({
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  const allRecipes = useAppStore(s => s.recipes);
   const source = useMemo(
-    () => (mealType ? allRecipes.filter((r) => r.mealType === mealType) : allRecipes),
-    [mealType, allRecipes]
+    () => (mealType ? recipes.filter((r) => r.mealType === mealType) : recipes),
+    [mealType]
   );
 
   // Counts per ingredient + group buckets
