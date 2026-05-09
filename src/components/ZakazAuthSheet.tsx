@@ -17,21 +17,43 @@ export function openInBrowser(url: string) {
   window.open(`${url}${sep}_t=${Date.now()}`, "_blank", "noopener,noreferrer");
 }
 
+
+const STORES_DATA = [
+  { city: "kyiv", label: "Київ", stores: [
+    { id: "48201009", chain: "auchan",     label: "Auchan Київ",      domain: "auchan.zakaz.ua"     },
+    { id: "48215611", chain: "metro",      label: "Metro Київ",       domain: "metro.zakaz.ua"      },
+    { id: "48216591", chain: "novus",      label: "Novus Київ",       domain: "novus.zakaz.ua"      },
+    { id: "48246711", chain: "megamarket", label: "МегаМаркет Київ",  domain: "megamarket.zakaz.ua" },
+  ]},
+  { city: "lviv", label: "Львів", stores: [
+    { id: "48221729", chain: "auchan",     label: "Auchan Львів",     domain: "auchan.zakaz.ua"     },
+    { id: "48235006", chain: "metro",      label: "Metro Львів",      domain: "metro.zakaz.ua"      },
+    { id: "48235007", chain: "novus",      label: "Novus Львів",      domain: "novus.zakaz.ua"      },
+  ]},
+  { city: "dnipro", label: "Дніпро", stores: [
+    { id: "48215836", chain: "auchan",     label: "Auchan Дніпро",    domain: "auchan.zakaz.ua"     },
+    { id: "48235010", chain: "metro",      label: "Metro Дніпро",     domain: "metro.zakaz.ua"      },
+  ]},
+  { city: "kharkiv", label: "Харків", stores: [
+    { id: "48215850", chain: "auchan",     label: "Auchan Харків",    domain: "auchan.zakaz.ua"     },
+    { id: "48235012", chain: "metro",      label: "Metro Харків",     domain: "metro.zakaz.ua"      },
+  ]},
+  { city: "odesa", label: "Одеса", stores: [
+    { id: "48216305", chain: "auchan",     label: "Auchan Одеса",     domain: "auchan.zakaz.ua"     },
+    { id: "48235015", chain: "metro",      label: "Metro Одеса",      domain: "metro.zakaz.ua"      },
+  ]},
+];
+
 const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
   const { zakazAuth, setZakazAuthorized } = useAppStore();
   const [step, setStep] = useState<"city" | "store" | "login" | "confirm">("city");
-  const [cities, setCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [cities, setCities] = useState<City[]>(STORES_DATA);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   useEffect(() => {
     if (!open) return;
-    setLoading(true);
-    fetch("/api/zakaz-stores")
-      .then(r => r.json())
-      .then(d => { setCities(d.cities || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    setCities(STORES_DATA);
   }, [open]);
 
   const handleSelectCity = (city: City) => {
