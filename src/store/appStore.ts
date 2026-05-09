@@ -77,6 +77,12 @@ interface AppState {
   setPendingAction: (action: (() => void) | null) => void;
   requireAuth: (action: () => void) => boolean;
   incrementSessionCount: () => void;
+
+  // ── Zakaz.ua auth ────────────────────────────────────────────────
+  zakazAuth: ZakazAuth;
+  setZakazAuthorized: (city: string) => void;
+  setZakazCity: (city: string) => void;
+  clearZakazAuth: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -241,3 +247,10 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+
+export interface ZakazAuth {
+  authorized: boolean;
+  city: string;
+  authorizedAt: string | null;
+}
