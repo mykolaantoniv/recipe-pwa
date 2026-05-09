@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { type MealType } from "@/data/recipes";
-import { useAppStore } from "@/store/appStore";
 import { useAppStore, type MealPlan, type ShoppingItem } from "@/store/appStore";
 import { CalendarDays, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";

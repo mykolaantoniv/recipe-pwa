@@ -9,6 +9,7 @@ import cookNowBg from "@/assets/cook-now-bg.jpg";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { recipes } = useAppStore();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [openRecipeId, setOpenRecipeId] = useState<string | null>(null);

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
-import { useAppStore } from "@/store/appStore";
 import RecipeModal from "@/components/RecipeModal";
 import { UtensilsCrossed, Trash2, ChevronRight, Heart } from "lucide-react";
 

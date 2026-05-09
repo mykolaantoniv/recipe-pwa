@@ -48,7 +48,7 @@ const IngredientsSelector = ({
   const allRecipes = useAppStore(s => s.recipes);
   const source = useMemo(
     () => (mealType ? allRecipes.filter((r) => r.mealType === mealType) : allRecipes),
-    [mealType]
+    [mealType, allRecipes]
   );
 
   // Counts per ingredient + group buckets
