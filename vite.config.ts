@@ -10,8 +10,8 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Здоровий Край",
-        short_name: "Здоровий Край",
+        name: "Reciply",
+        short_name: "Reciply",
         description: "Рецепти, план харчування та список покупок",
         theme_color: "#0B1020",
         background_color: "#050816",

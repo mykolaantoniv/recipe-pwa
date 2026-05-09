@@ -146,7 +146,7 @@ export const useAppStore = create<AppState>()(
       incrementSessionCount: () => set(s => ({ auth: { ...s.auth, sessionCount: s.auth.sessionCount + 1 } })),
     }),
     {
-      name: 'zdorovyi-krai-storage',
+      name: 'reciply-storage',
       partialize: (state) => ({
         savedRecipes: state.savedRecipes,
         mealPlans: state.mealPlans,
