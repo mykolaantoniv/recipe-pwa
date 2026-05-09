@@ -51,7 +51,6 @@ const CookNowPage = () => {
         );
         return { recipe: r, matchCount, missingIngs, missingCount: missingIngs.length };
       })
-      .filter((item) => item.matchCount > 0)
       .sort((a, b) => {
         // Primary: fewer missing ingredients first
         if (a.missingCount !== b.missingCount) return a.missingCount - b.missingCount;
