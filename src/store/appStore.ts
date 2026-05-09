@@ -80,8 +80,7 @@ interface AppState {
 
   // ── Zakaz.ua auth ────────────────────────────────────────────────
   zakazAuth: ZakazAuth;
-  setZakazAuthorized: (city: string) => void;
-  setZakazCity: (city: string) => void;
+  setZakazAuthorized: (storeId: string, chain: string, domain: string, storeLabel: string) => void;
   clearZakazAuth: () => void;
 }
 
@@ -251,6 +250,9 @@ export const useAppStore = create<AppState>()(
 
 export interface ZakazAuth {
   authorized: boolean;
-  city: string;
+  storeId: string;
+  chain: string;
+  domain: string;
+  storeLabel: string;
   authorizedAt: string | null;
 }
