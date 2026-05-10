@@ -6,7 +6,8 @@ export async function onRequest(context) {
   const q        = url.searchParams.get('q') || '';
   const storeId  = url.searchParams.get('storeId') || '';
   const chain    = url.searchParams.get('chain') || 'auchan';
-  const perPage  = url.searchParams.get('per_page') || '6';
+  const perPage  = url.searchParams.get('per_page') || '10';
+  const page     = url.searchParams.get('page') || '1';
 
   if (!q.trim() || !storeId) {
     return new Response(JSON.stringify({ results: [] }), {
@@ -18,7 +19,7 @@ export async function onRequest(context) {
   const chainDomain = `${chain}.zakaz.ua`;
 
   try {
-    const apiUrl = `https://stores-api.zakaz.ua/stores/${storeId}/products/search/?q=${encodeURIComponent(q)}&page=1&per_page=${perPage}&lang=uk`;
+    const apiUrl = `https://stores-api.zakaz.ua/stores/${storeId}/products/search/?q=${encodeURIComponent(q)}&page=${page}&per_page=${perPage}&lang=uk`;
 
     const response = await fetch(apiUrl, {
       headers: {
@@ -45,7 +46,7 @@ export async function onRequest(context) {
       url: p.web_url ? p.web_url.replace('/en/', '/uk/') : `https://${chainDomain}/uk/products/${p.slug}--${p.ean}/`,
     }));
 
-    return new Response(JSON.stringify({ results, storeId }), {
+    return new Response(JSON.stringify({ results, storeId, count: data.count || 0 }), {
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',

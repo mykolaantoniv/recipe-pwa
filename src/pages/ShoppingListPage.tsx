@@ -20,6 +20,7 @@ const ShoppingListPage = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [searching, setSearching]   = useState(false);
   const [results, setResults]       = useState<IngredientResult[]>([]);
+  const [storeCtx, setStoreCtx]     = useState({ storeId: '', chain: '' });
 
   const grouped = shoppingList.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -33,15 +34,19 @@ const ShoppingListPage = () => {
   const startSearch = useCallback(async (storeId: string, chain: string) => {
     setSearching(true);
     setShowPicker(true);
+    setStoreCtx({ storeId, chain });
 
     const initial: IngredientResult[] = unchecked.map((item) => ({
       ingredient: item.name,
       amount: item.amount,
       products: [],
       loading: true,
+      loadingMore: false,
       selectedIdx: 0,
       skipped: false,
       quantity: 1,
+      page: 1,
+      total: 0,
     }));
     setResults(initial);
 
@@ -53,11 +58,11 @@ const ShoppingListPage = () => {
           const idx = arr.findIndex((r) => r.ingredient === item.name);
           try {
             const res = await fetch(
-              `/api/zakaz-search?q=${encodeURIComponent(item.name)}&storeId=${storeId}&chain=${chain}&per_page=6`
+              `/api/zakaz-search?q=${encodeURIComponent(item.name)}&storeId=${storeId}&chain=${chain}&per_page=10&page=1`
             );
             const data = await res.json();
             if (data.error) console.error(`zakaz-search [${item.name}]:`, data.error);
-            arr[idx] = { ...arr[idx], products: data.results || [], loading: false };
+            arr[idx] = { ...arr[idx], products: data.results || [], loading: false, total: data.count || 0 };
           } catch {
             arr[idx] = { ...arr[idx], products: [], loading: false };
           }
@@ -92,6 +97,26 @@ const ShoppingListPage = () => {
       prev.map((r) => r.ingredient === ingredient ? { ...r, quantity: qty } : r)
     );
   };
+
+  const handleLoadMore = useCallback(async (ingredient: string) => {
+    setResults((prev) => prev.map((r) => r.ingredient === ingredient ? { ...r, loadingMore: true } : r));
+    const current = results.find((r) => r.ingredient === ingredient);
+    if (!current) return;
+    const nextPage = current.page + 1;
+    try {
+      const res = await fetch(
+        `/api/zakaz-search?q=${encodeURIComponent(ingredient)}&storeId=${storeCtx.storeId}&chain=${storeCtx.chain}&per_page=10&page=${nextPage}`
+      );
+      const data = await res.json();
+      setResults((prev) => prev.map((r) =>
+        r.ingredient === ingredient
+          ? { ...r, products: [...r.products, ...(data.results || [])], page: nextPage, loadingMore: false }
+          : r
+      ));
+    } catch {
+      setResults((prev) => prev.map((r) => r.ingredient === ingredient ? { ...r, loadingMore: false } : r));
+    }
+  }, [results, storeCtx]);
 
   const handleSkip = (ingredient: string) => {
     setResults((prev) =>
@@ -197,7 +222,7 @@ const ShoppingListPage = () => {
       )}
 
       <ZakazAuthSheet open={showAuth} onClose={() => setShowAuth(false)} onAuthorized={handleAuthorized} />
-      <ZakazProductPicker open={showPicker} results={results} storeLabel={zakazAuth.storeLabel} onSelect={handleSelect} onSkip={handleSkip} onSetQuantity={handleSetQuantity} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
+      <ZakazProductPicker open={showPicker} results={results} storeLabel={zakazAuth.storeLabel} onSelect={handleSelect} onSkip={handleSkip} onSetQuantity={handleSetQuantity} onLoadMore={handleLoadMore} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
     </div>
   );
 };

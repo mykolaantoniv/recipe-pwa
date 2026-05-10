@@ -15,9 +15,12 @@ export interface IngredientResult {
   amount: string;
   products: ZakazProduct[];
   loading: boolean;
+  loadingMore: boolean;
   selectedIdx: number;
   skipped: boolean;
   quantity: number;
+  page: number;
+  total: number;
 }
 
 interface Props {
@@ -27,13 +30,14 @@ interface Props {
   onSelect: (ingredient: string, idx: number) => void;
   onSkip: (ingredient: string) => void;
   onSetQuantity: (ingredient: string, qty: number) => void;
+  onLoadMore: (ingredient: string) => void;
   onAddToCart: (confirmed: IngredientResult[]) => void;
   onClose: () => void;
   searching: boolean;
 }
 
 const ZakazProductPicker = ({
-  open, results, storeLabel, onSelect, onSkip, onSetQuantity, onAddToCart, onClose, searching,
+  open, results, storeLabel, onSelect, onSkip, onSetQuantity, onLoadMore, onAddToCart, onClose, searching,
 }: Props) => {
   const confirmed = results.filter(r => !r.loading && !r.skipped && r.products.length > 0);
   const done      = results.filter(r => !r.loading).length;
@@ -193,6 +197,19 @@ const ZakazProductPicker = ({
                         <span className="text-xs text-muted-foreground">{selected.unit}</span>
                       )}
                     </div>
+
+                    {/* Load more */}
+                    {result.products.length < result.total && (
+                      <button
+                        onClick={() => onLoadMore(result.ingredient)}
+                        disabled={result.loadingMore}
+                        className="mt-2 w-full text-xs text-primary font-semibold py-2 rounded-xl bg-primary/10 active:bg-primary/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {result.loadingMore
+                          ? <><Loader2 className="w-3 h-3 animate-spin" /> Завантаження…</>
+                          : `Ще варіанти · ${result.total - result.products.length} більше`}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <p className="px-3 pb-3 text-sm text-muted-foreground italic">не знайдено</p>
