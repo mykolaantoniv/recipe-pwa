@@ -8,27 +8,25 @@ interface City  { city: string; label: string; stores: Store[]; }
 
 const STORES_DATA: City[] = [
   { city: "kyiv", label: "Київ", stores: [
-    { id: "48201009", chain: "auchan",     label: "Auchan Київ",     domain: "auchan.zakaz.ua"     },
+    { id: "48246401", chain: "auchan",     label: "Auchan Київ",     domain: "auchan.zakaz.ua"     },
     { id: "48215611", chain: "metro",      label: "Metro Київ",      domain: "metro.zakaz.ua"      },
-    { id: "48216591", chain: "novus",      label: "Novus Київ",      domain: "novus.zakaz.ua"      },
-    { id: "48246711", chain: "megamarket", label: "МегаМаркет Київ", domain: "megamarket.zakaz.ua" },
+    { id: "48201029", chain: "novus",      label: "Novus Київ",      domain: "novus.zakaz.ua"      },
+    { id: "48267601", chain: "megamarket", label: "МегаМаркет Київ", domain: "megamarket.zakaz.ua" },
   ]},
   { city: "lviv", label: "Львів", stores: [
-    { id: "48221729", chain: "auchan",     label: "Auchan Львів",    domain: "auchan.zakaz.ua"     },
-    { id: "48235006", chain: "metro",      label: "Metro Львів",     domain: "metro.zakaz.ua"      },
-    { id: "48235007", chain: "novus",      label: "Novus Львів",     domain: "novus.zakaz.ua"      },
+    { id: "48246409", chain: "auchan",     label: "Auchan Львів",    domain: "auchan.zakaz.ua"     },
+    { id: "48215637", chain: "metro",      label: "Metro Львів",     domain: "metro.zakaz.ua"      },
   ]},
   { city: "dnipro", label: "Дніпро", stores: [
-    { id: "48215836", chain: "auchan",     label: "Auchan Дніпро",   domain: "auchan.zakaz.ua"     },
-    { id: "48235010", chain: "metro",      label: "Metro Дніпро",    domain: "metro.zakaz.ua"      },
+    { id: "48246429", chain: "auchan",     label: "Auchan Дніпро",   domain: "auchan.zakaz.ua"     },
+    { id: "48215614", chain: "metro",      label: "Metro Дніпро",    domain: "metro.zakaz.ua"      },
   ]},
   { city: "kharkiv", label: "Харків", stores: [
-    { id: "48215850", chain: "auchan",     label: "Auchan Харків",   domain: "auchan.zakaz.ua"     },
-    { id: "48235012", chain: "metro",      label: "Metro Харків",    domain: "metro.zakaz.ua"      },
+    { id: "48215613", chain: "metro",      label: "Metro Харків",    domain: "metro.zakaz.ua"      },
   ]},
   { city: "odesa", label: "Одеса", stores: [
-    { id: "48216305", chain: "auchan",     label: "Auchan Одеса",    domain: "auchan.zakaz.ua"     },
-    { id: "48235015", chain: "metro",      label: "Metro Одеса",     domain: "metro.zakaz.ua"      },
+    { id: "48246416", chain: "auchan",     label: "Auchan Одеса",    domain: "auchan.zakaz.ua"     },
+    { id: "48215612", chain: "metro",      label: "Metro Одеса",     domain: "metro.zakaz.ua"      },
   ]},
 ];
 
