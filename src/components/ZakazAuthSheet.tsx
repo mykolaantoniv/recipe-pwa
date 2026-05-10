@@ -163,8 +163,8 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
               {/* Phone */}
               <div className="glass-card rounded-2xl overflow-hidden">
                 <input
-                  type="tel"
-                  placeholder="Номер телефону (0XXXXXXXXX)"
+                  type="text"
+                  placeholder="Телефон або email"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   className="w-full bg-transparent px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
