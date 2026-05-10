@@ -42,7 +42,7 @@ export function openInBrowser(url: string) {
 interface Props {
   open: boolean;
   onClose: () => void;
-  onAuthorized: () => void;
+  onAuthorized: (storeId: string, chain: string) => void;
 }
 
 const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
@@ -67,7 +67,7 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
   const handleConfirm = () => {
     if (!selectedStore) return;
     setZakazAuthorized(selectedStore.id, selectedStore.chain, selectedStore.domain, selectedStore.label);
-    onAuthorized();
+    onAuthorized(selectedStore.id, selectedStore.chain);
     setStep("city");
   };
 

@@ -75,10 +75,9 @@ const ShoppingListPage = () => {
     }
   };
 
-  const handleAuthorized = () => {
+  const handleAuthorized = (storeId: string, chain: string) => {
     setShowAuth(false);
-    const auth = useAppStore.getState().zakazAuth ?? DEFAULT_AUTH;
-    startSearch(auth.storeId, auth.chain);
+    startSearch(storeId, chain);
   };
 
   const handleSelect = (ingredient: string, idx: number) => {
