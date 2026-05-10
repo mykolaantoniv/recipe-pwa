@@ -44,27 +44,46 @@ const ZakazProductPicker = ({
   open, results, storeLabel, zakazToken, storeId, chain,
   onSelect, onSkip, onSetQuantity, onLoadMore, onAddToCart, onClose, searching,
 }: Props) => {
-  const confirmed = results.filter(r => !r.loading && !r.skipped && r.products.length > 0);
-  const done      = results.filter(r => !r.loading).length;
-  const total     = results.length;
-  const progress  = total > 0 ? (done / total) * 100 : 0;
+  const done     = results.filter(r => !r.loading).length;
+  const total    = results.length;
+  const progress = total > 0 ? (done / total) * 100 : 0;
 
-  const [adding, setAdding]   = useState<"idle" | "loading" | "ok" | "err">("idle");
+  // Local set of ingredients the user has chosen to add
+  const [addedSet, setAddedSet]       = useState<Set<string>>(new Set());
+  const [cartStatus, setCartStatus]   = useState<"idle" | "loading" | "ok" | "err">("idle");
+  const [cartSent, setCartSent]       = useState(false);
 
-  const handleOpenAll = () => {
-    confirmed.forEach(item => {
-      const p = item.products[item.selectedIdx];
-      if (p?.url) window.open(p.url, "_blank", "noopener,noreferrer");
+  const toggleAdded = (ingredient: string) =>
+    setAddedSet(prev => {
+      const next = new Set(prev);
+      next.has(ingredient) ? next.delete(ingredient) : next.add(ingredient);
+      return next;
     });
-    onAddToCart(confirmed);
-  };
 
-  const handleAddToCart = async () => {
-    setAdding("loading");
-    const products = confirmed.map(item => ({
-      ean: item.products[item.selectedIdx].id,
-      quantity: item.quantity,
+  const addedResults = results.filter(r => addedSet.has(r.ingredient) && r.products.length > 0);
+
+  const cartDomain = `${chain}.zakaz.ua`;
+  const cartUrl    = `https://${cartDomain}/uk/cart/`;
+
+  const handleSendToCart = async () => {
+    if (addedResults.length === 0) return;
+
+    if (!zakazToken) {
+      // No token → open each selected product page
+      addedResults.forEach(r => {
+        const p = r.products[r.selectedIdx];
+        if (p?.url) window.open(p.url, "_blank", "noopener,noreferrer");
+      });
+      onAddToCart(addedResults);
+      return;
+    }
+
+    setCartStatus("loading");
+    const products = addedResults.map(r => ({
+      ean: r.products[r.selectedIdx].id,
+      quantity: r.quantity,
     }));
+
     try {
       const res = await fetch("/api/zakaz-cart", {
         method: "POST",
@@ -73,22 +92,22 @@ const ZakazProductPicker = ({
       });
       const data = await res.json();
       if (data.ok) {
-        setAdding("ok");
-        onAddToCart(confirmed);
-        setTimeout(() => setAdding("idle"), 3000);
+        setCartStatus("ok");
+        setCartSent(true);
+        onAddToCart(addedResults);
       } else {
         console.error("zakaz-cart:", data);
-        setAdding("err");
-        setTimeout(() => setAdding("idle"), 3000);
+        setCartStatus("err");
+        setTimeout(() => setCartStatus("idle"), 3000);
       }
     } catch {
-      setAdding("err");
-      setTimeout(() => setAdding("idle"), 3000);
+      setCartStatus("err");
+      setTimeout(() => setCartStatus("idle"), 3000);
     }
   };
 
   return (
-    <Sheet open={open} onOpenChange={o => !o && onClose()}>
+    <Sheet open={open} onOpenChange={o => { if (!o) { onClose(); setAddedSet(new Set()); setCartSent(false); setCartStatus("idle"); } }}>
       <SheetContent
         side="bottom"
         className="h-[92vh] rounded-t-3xl p-0 overflow-y-auto border-t-0 [&>button]:hidden"
@@ -125,33 +144,38 @@ const ZakazProductPicker = ({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Знайдено <span className="text-primary font-bold">{confirmed.length}</span> з {total} ·
-              Оберіть варіант і кількість
+              Оберіть потрібний товар і натисніть{" "}
+              <span className="text-primary font-bold">Додати</span>
             </p>
           )}
         </div>
 
         {/* Ingredient cards */}
-        <div className="px-4 py-3 space-y-3 pb-32">
+        <div className="px-4 py-3 space-y-3 pb-36">
           {results.map(result => {
-            const selected = result.products[result.selectedIdx];
+            const selected   = result.products[result.selectedIdx];
+            const isAdded    = addedSet.has(result.ingredient);
+            const isSkipped  = result.skipped;
 
             return (
               <div
                 key={result.ingredient}
-                className={`glass-card overflow-hidden transition-opacity ${result.skipped ? "opacity-40" : ""}`}
+                className={`glass-card overflow-hidden transition-all ${isSkipped ? "opacity-40" : ""} ${isAdded ? "ring-2 ring-primary/60" : ""}`}
               >
-                {/* Card header: ingredient name + skip */}
+                {/* Card header */}
                 <div className="flex items-center justify-between px-3 pt-3 pb-1">
-                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
-                    {result.ingredient} · {result.amount}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {isAdded && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+                      {result.ingredient} · {result.amount}
+                    </span>
+                  </div>
                   {!result.loading && (
                     <button
                       onClick={() => onSkip(result.ingredient)}
                       className="text-[10px] text-muted-foreground bg-secondary px-2 py-1 rounded-lg"
                     >
-                      {result.skipped ? "повернути" : "пропустити"}
+                      {isSkipped ? "повернути" : "пропустити"}
                     </button>
                   )}
                 </div>
@@ -162,7 +186,7 @@ const ZakazProductPicker = ({
                   </div>
                 ) : selected ? (
                   <div className="px-3 pb-3">
-                    {/* Image row with prev/next arrows */}
+                    {/* Image row */}
                     <div className="flex items-center gap-2 mb-2">
                       <button
                         onClick={() => onSelect(result.ingredient, result.selectedIdx - 1)}
@@ -206,31 +230,43 @@ const ZakazProductPicker = ({
                       {selected.title}
                     </p>
                     {selected.price && (
-                      <p className="text-base font-extrabold text-primary mb-3">{selected.price} ₴</p>
+                      <p className="text-base font-extrabold text-primary mb-2">{selected.price} ₴</p>
                     )}
 
-                    {/* Quantity control */}
-                    <div className="flex items-center gap-3">
+                    {/* Quantity + Add button row */}
+                    <div className="flex items-center gap-2 mb-2">
                       <div className="flex items-center bg-secondary rounded-xl overflow-hidden">
                         <button
                           onClick={() => onSetQuantity(result.ingredient, Math.max(1, result.quantity - 1))}
-                          className="w-10 h-9 flex items-center justify-center active:bg-primary/20"
+                          className="w-9 h-9 flex items-center justify-center active:bg-primary/20"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-8 text-center text-sm font-bold select-none">
+                        <span className="w-7 text-center text-sm font-bold select-none">
                           {result.quantity}
                         </span>
                         <button
                           onClick={() => onSetQuantity(result.ingredient, result.quantity + 1)}
-                          className="w-10 h-9 flex items-center justify-center active:bg-primary/20"
+                          className="w-9 h-9 flex items-center justify-center active:bg-primary/20"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       {selected.unit && (
                         <span className="text-xs text-muted-foreground">{selected.unit}</span>
                       )}
+
+                      <button
+                        onClick={() => toggleAdded(result.ingredient)}
+                        disabled={isSkipped}
+                        className={`ml-auto px-4 h-9 rounded-xl text-sm font-extrabold flex items-center gap-1.5 transition-all active:scale-[0.97] ${
+                          isAdded
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-primary/15 text-primary"
+                        }`}
+                      >
+                        {isAdded ? <><Check className="w-3.5 h-3.5" /> Додано</> : "Додати"}
+                      </button>
                     </div>
 
                     {/* Load more */}
@@ -238,7 +274,7 @@ const ZakazProductPicker = ({
                       <button
                         onClick={() => onLoadMore(result.ingredient)}
                         disabled={result.loadingMore}
-                        className="mt-2 w-full text-xs text-primary font-semibold py-2 rounded-xl bg-primary/10 active:bg-primary/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        className="w-full text-xs text-primary font-semibold py-2 rounded-xl bg-primary/10 active:bg-primary/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
                       >
                         {result.loadingMore
                           ? <><Loader2 className="w-3 h-3 animate-spin" /> Завантаження…</>
@@ -254,32 +290,39 @@ const ZakazProductPicker = ({
           })}
         </div>
 
-        {/* Bottom CTA */}
-        {!searching && confirmed.length > 0 && (
+        {/* Bottom bar */}
+        {!searching && (
           <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/30 p-4 space-y-2">
-            {zakazToken ? (
+            {cartSent ? (
+              /* After successful cart send */
               <button
-                onClick={handleAddToCart}
-                disabled={adding === "loading" || adding === "ok"}
-                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] disabled:opacity-70"
-              >
-                {adding === "loading" && <><Loader2 className="w-5 h-5 animate-spin" /> Додаємо…</>}
-                {adding === "ok"      && <><Check className="w-5 h-5" /> Додано до кошика!</>}
-                {adding === "err"     && <><ShoppingCart className="w-5 h-5" /> Помилка — спробуйте знову</>}
-                {adding === "idle"    && <><ShoppingCart className="w-5 h-5" /> Додати до кошика — {confirmed.length} товарів</>}
-              </button>
-            ) : (
-              <button
-                onClick={handleOpenAll}
+                onClick={() => window.open(cartUrl, "_blank", "noopener,noreferrer")}
                 className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)]"
               >
                 <ExternalLink className="w-5 h-5" />
-                Відкрити в {storeLabel || "магазині"} — {confirmed.length} товарів
+                Перейти до кошика в {storeLabel}
               </button>
-            )}
-            {!zakazToken && (
-              <p className="text-center text-[11px] text-muted-foreground">
-                Підключіть кошик у налаштуваннях магазину для прямого додавання
+            ) : addedSet.size > 0 ? (
+              /* Items selected, ready to send */
+              <button
+                onClick={handleSendToCart}
+                disabled={cartStatus === "loading"}
+                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] disabled:opacity-70"
+              >
+                {cartStatus === "loading" ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Додаємо до кошика…</>
+                ) : cartStatus === "err" ? (
+                  <><ShoppingCart className="w-5 h-5" /> Помилка — спробуйте знову</>
+                ) : zakazToken ? (
+                  <><ShoppingCart className="w-5 h-5" /> Додати до кошика · {addedSet.size} товарів</>
+                ) : (
+                  <><ExternalLink className="w-5 h-5" /> Відкрити вибрані · {addedSet.size} товарів</>
+                )}
+              </button>
+            ) : (
+              /* Nothing selected yet */
+              <p className="text-center text-sm text-muted-foreground py-2">
+                Натисніть <span className="text-primary font-semibold">Додати</span> на потрібних товарах
               </p>
             )}
           </div>
