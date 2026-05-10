@@ -30,7 +30,8 @@ export async function onRequest(context) {
     });
 
     if (!response.ok) {
-      throw new Error(`zakaz API returned ${response.status}`);
+      const body = await response.text().catch(() => '');
+      throw new Error(`zakaz API ${response.status}: ${body.slice(0, 300)}`);
     }
 
     const data = await response.json();

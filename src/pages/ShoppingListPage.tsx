@@ -55,6 +55,7 @@ const ShoppingListPage = () => {
               `/api/zakaz-search?q=${encodeURIComponent(item.name)}&storeId=${storeId}&chain=${chain}&per_page=6`
             );
             const data = await res.json();
+            if (data.error) console.error(`zakaz-search [${item.name}]:`, data.error);
             arr[idx] = { ...arr[idx], products: data.results || [], loading: false };
           } catch {
             arr[idx] = { ...arr[idx], products: [], loading: false };
