@@ -37,12 +37,12 @@ export async function onRequest(context) {
     const data = await response.json();
 
     const results = (data.results || []).map((p) => ({
-      id: p.ean || p.id || '',
+      id: p.ean || p.sku || '',
       title: p.title || '',
       price: p.price ? (p.price / 100).toFixed(2) : null,
-      image: p.img_url || p.image || null,
+      image: p.img?.s350x350 || p.img?.s200x200 || p.img?.s150x150 || null,
       unit: p.unit || '',
-      url: `https://${chainDomain}/uk/products/${p.ean || p.id}/`,
+      url: p.web_url ? p.web_url.replace('/en/', '/uk/') : `https://${chainDomain}/uk/products/${p.slug}--${p.ean}/`,
     }));
 
     return new Response(JSON.stringify({ results, storeId }), {
