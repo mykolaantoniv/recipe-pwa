@@ -63,7 +63,7 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
   const handleStore = (store: Store) => {
     setSelectedStore(store);
     setStep("login");
-    openInBrowser(`https://${store.domain}/uk/login/`);
+    openInBrowser(`https://${store.domain}/uk/`);
   };
 
   const handleConfirm = () => {
@@ -147,7 +147,7 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
                 className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 mb-3 active:scale-[0.98]">
                 <Check className="w-5 h-5" /> Я увійшов — продовжити
               </button>
-              <button onClick={() => openInBrowser(`https://${selectedStore.domain}/uk/login/`)}
+              <button onClick={() => openInBrowser(`https://${selectedStore.domain}/uk/`)}
                 className="w-full text-muted-foreground text-sm py-2.5 flex items-center justify-center gap-1.5">
                 <ExternalLink className="w-3.5 h-3.5" /> Відкрити знову
               </button>
