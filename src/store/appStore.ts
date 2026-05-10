@@ -90,6 +90,7 @@ export const useAppStore = create<AppState>()(
       savedRecipes: [],
       mealPlans: [],
       shoppingList: [],
+      zakazAuth: { authorized: false, storeId: '', chain: '', domain: '', storeLabel: '', authorizedAt: null },
       profile: {
         name: "",
         email: "",
@@ -250,6 +251,12 @@ export const useAppStore = create<AppState>()(
         set((s) => ({
           auth: { ...s.auth, sessionCount: s.auth.sessionCount + 1 },
         })),
+
+      setZakazAuthorized: (storeId, chain, domain, storeLabel) =>
+        set({ zakazAuth: { authorized: true, storeId, chain, domain, storeLabel, authorizedAt: new Date().toISOString() } }),
+
+      clearZakazAuth: () =>
+        set({ zakazAuth: { authorized: false, storeId: '', chain: '', domain: '', storeLabel: '', authorizedAt: null } }),
     }),
     {
       name: "meal-planner-storage",
