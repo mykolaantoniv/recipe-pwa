@@ -185,6 +185,7 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
                   onClick={() => setShowPassword(v => !v)}
                   className="px-3 text-muted-foreground"
                   type="button"
+                  aria-label={showPassword ? "Приховати пароль" : "Показати пароль"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
