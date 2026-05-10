@@ -80,7 +80,9 @@ interface AppState {
 
   // ── Zakaz.ua auth ────────────────────────────────────────────────
   zakazAuth: ZakazAuth;
+  zakazToken: string | null;
   setZakazAuthorized: (storeId: string, chain: string, domain: string, storeLabel: string) => void;
+  setZakazToken: (token: string | null) => void;
   clearZakazAuth: () => void;
 }
 
@@ -91,6 +93,7 @@ export const useAppStore = create<AppState>()(
       mealPlans: [],
       shoppingList: [],
       zakazAuth: { authorized: false, storeId: '', chain: '', domain: '', storeLabel: '', authorizedAt: null },
+      zakazToken: null,
       profile: {
         name: "",
         email: "",
@@ -255,8 +258,10 @@ export const useAppStore = create<AppState>()(
       setZakazAuthorized: (storeId, chain, domain, storeLabel) =>
         set({ zakazAuth: { authorized: true, storeId, chain, domain, storeLabel, authorizedAt: new Date().toISOString() } }),
 
+      setZakazToken: (token) => set({ zakazToken: token }),
+
       clearZakazAuth: () =>
-        set({ zakazAuth: { authorized: false, storeId: '', chain: '', domain: '', storeLabel: '', authorizedAt: null } }),
+        set({ zakazAuth: { authorized: false, storeId: '', chain: '', domain: '', storeLabel: '', authorizedAt: null }, zakazToken: null }),
     }),
     {
       name: "meal-planner-storage",

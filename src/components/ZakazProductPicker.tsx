@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { ChevronLeft, ChevronRight, ExternalLink, ShoppingBag, Loader2, Search, X, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, ShoppingBag, Loader2, Search, X, Minus, Plus, ShoppingCart, Check } from "lucide-react";
 
 export interface ZakazProduct {
   id: string;
@@ -27,6 +28,9 @@ interface Props {
   open: boolean;
   results: IngredientResult[];
   storeLabel: string;
+  zakazToken: string | null;
+  storeId: string;
+  chain: string;
   onSelect: (ingredient: string, idx: number) => void;
   onSkip: (ingredient: string) => void;
   onSetQuantity: (ingredient: string, qty: number) => void;
@@ -37,12 +41,15 @@ interface Props {
 }
 
 const ZakazProductPicker = ({
-  open, results, storeLabel, onSelect, onSkip, onSetQuantity, onLoadMore, onAddToCart, onClose, searching,
+  open, results, storeLabel, zakazToken, storeId, chain,
+  onSelect, onSkip, onSetQuantity, onLoadMore, onAddToCart, onClose, searching,
 }: Props) => {
   const confirmed = results.filter(r => !r.loading && !r.skipped && r.products.length > 0);
   const done      = results.filter(r => !r.loading).length;
   const total     = results.length;
   const progress  = total > 0 ? (done / total) * 100 : 0;
+
+  const [adding, setAdding]   = useState<"idle" | "loading" | "ok" | "err">("idle");
 
   const handleOpenAll = () => {
     confirmed.forEach(item => {
@@ -50,6 +57,34 @@ const ZakazProductPicker = ({
       if (p?.url) window.open(p.url, "_blank", "noopener,noreferrer");
     });
     onAddToCart(confirmed);
+  };
+
+  const handleAddToCart = async () => {
+    setAdding("loading");
+    const products = confirmed.map(item => ({
+      ean: item.products[item.selectedIdx].id,
+      quantity: item.quantity,
+    }));
+    try {
+      const res = await fetch("/api/zakaz-cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeId, chain, token: zakazToken, products }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setAdding("ok");
+        onAddToCart(confirmed);
+        setTimeout(() => setAdding("idle"), 3000);
+      } else {
+        console.error("zakaz-cart:", data);
+        setAdding("err");
+        setTimeout(() => setAdding("idle"), 3000);
+      }
+    } catch {
+      setAdding("err");
+      setTimeout(() => setAdding("idle"), 3000);
+    }
   };
 
   return (
@@ -221,14 +256,32 @@ const ZakazProductPicker = ({
 
         {/* Bottom CTA */}
         {!searching && confirmed.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/30 p-4">
-            <button
-              onClick={handleOpenAll}
-              className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)]"
-            >
-              <ExternalLink className="w-5 h-5" />
-              Відкрити в Auchan — {confirmed.length} товарів
-            </button>
+          <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/30 p-4 space-y-2">
+            {zakazToken ? (
+              <button
+                onClick={handleAddToCart}
+                disabled={adding === "loading" || adding === "ok"}
+                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] disabled:opacity-70"
+              >
+                {adding === "loading" && <><Loader2 className="w-5 h-5 animate-spin" /> Додаємо…</>}
+                {adding === "ok"      && <><Check className="w-5 h-5" /> Додано до кошика!</>}
+                {adding === "err"     && <><ShoppingCart className="w-5 h-5" /> Помилка — спробуйте знову</>}
+                {adding === "idle"    && <><ShoppingCart className="w-5 h-5" /> Додати до кошика — {confirmed.length} товарів</>}
+              </button>
+            ) : (
+              <button
+                onClick={handleOpenAll}
+                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)]"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Відкрити в {storeLabel || "магазині"} — {confirmed.length} товарів
+              </button>
+            )}
+            {!zakazToken && (
+              <p className="text-center text-[11px] text-muted-foreground">
+                Підключіть кошик у налаштуваннях магазину для прямого додавання
+              </p>
+            )}
           </div>
         )}
       </SheetContent>

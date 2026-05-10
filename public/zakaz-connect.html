@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Підключення кошика</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #050816; color: #fff;
+         display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .box { text-align: center; padding: 2rem; max-width: 360px; }
+  .icon { font-size: 3rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  p { color: #8b8fa8; font-size: .9rem; margin: 0; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="icon" id="icon">⏳</div>
+  <h1 id="title">Зчитуємо токен…</h1>
+  <p id="msg"></p>
+</div>
+<script>
+  const hash = location.hash.slice(1);
+  const params = new URLSearchParams(hash);
+  const token = params.get('token');
+
+  const icon = document.getElementById('icon');
+  const title = document.getElementById('title');
+  const msg = document.getElementById('msg');
+
+  if (token) {
+    // Store token via BroadcastChannel so the PWA tab picks it up
+    try {
+      const bc = new BroadcastChannel('zakaz-token');
+      bc.postMessage({ token });
+      bc.close();
+    } catch {}
+
+    // Also store in localStorage as fallback
+    localStorage.setItem('reciply_zakaz_token', token);
+
+    icon.textContent = '✅';
+    title.textContent = 'Кошик підключено!';
+    msg.textContent = 'Повертаємось в додаток…';
+
+    setTimeout(() => { location.href = '/'; }, 1200);
+  } else {
+    icon.textContent = '❌';
+    title.textContent = 'Токен не знайдено';
+    msg.textContent = 'Спробуйте ще раз або оберіть "Вставити токен вручну".';
+  }
+</script>
+</body>
+</html>

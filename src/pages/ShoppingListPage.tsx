@@ -11,7 +11,7 @@ const DEFAULT_AUTH: ZakazAuth = {
 const ShoppingListPage = () => {
   const {
     shoppingList, toggleShoppingItem, removeShoppingItem, setShoppingList,
-    zakazAuth: rawAuth,
+    zakazAuth: rawAuth, zakazToken,
   } = useAppStore();
 
   const zakazAuth: ZakazAuth = rawAuth ?? DEFAULT_AUTH;
@@ -222,7 +222,7 @@ const ShoppingListPage = () => {
       )}
 
       <ZakazAuthSheet open={showAuth} onClose={() => setShowAuth(false)} onAuthorized={handleAuthorized} />
-      <ZakazProductPicker open={showPicker} results={results} storeLabel={zakazAuth.storeLabel} onSelect={handleSelect} onSkip={handleSkip} onSetQuantity={handleSetQuantity} onLoadMore={handleLoadMore} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
+      <ZakazProductPicker open={showPicker} results={results} storeLabel={zakazAuth.storeLabel} zakazToken={zakazToken ?? null} storeId={storeCtx.storeId} chain={storeCtx.chain} onSelect={handleSelect} onSkip={handleSkip} onSetQuantity={handleSetQuantity} onLoadMore={handleLoadMore} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
     </div>
   );
 };

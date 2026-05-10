@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "PowerShell($r = [System.Net.WebClient]::new\\(\\); $r.Headers.Add\\(\"Accept\",\"application/json\"\\); $data = $r.DownloadString\\(\"https://reciply.pages.dev/api/zakaz-search?q=%D1%8F%D0%B9%D1%86%D1%8F&storeId=48246409&chain=auchan&per_page=2\"\\) | ConvertFrom-Json; $data.results[0] | ConvertTo-Json)"
+    ]
+  }
+}

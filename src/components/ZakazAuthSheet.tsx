@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Check, ExternalLink, ShoppingBag, LogIn, ChevronRight } from "lucide-react";
+import { Check, ExternalLink, ShoppingBag, ChevronRight } from "lucide-react";
 
 interface Store { id: string; chain: string; label: string; domain: string; }
 interface City  { city: string; label: string; stores: Store[]; }
@@ -45,11 +45,14 @@ interface Props {
   onAuthorized: (storeId: string, chain: string) => void;
 }
 
+const BOOKMARKLET = `javascript:(function(){var t=null;for(var k in localStorage){var v=localStorage[k];if(typeof v==='string'&&v.length>50&&v.startsWith('eyJ')){t=v;break;}if(typeof v==='string'&&v[0]==='{'){try{var o=JSON.parse(v),keys=['token','access_token','accessToken','authToken','bearer','userToken'];for(var i=0;i<keys.length;i++){if(o[keys[i]]&&typeof o[keys[i]]==='string'&&o[keys[i]].startsWith('eyJ')){t=o[keys[i]];break;}}}catch(e){}}}if(t){location.href='https://reciply.pages.dev/zakaz-connect.html#token='+encodeURIComponent(t);}else{alert('Токен не знайдено. Переконайтесь що ви увійшли в zakaz.ua');}})();`;
+
 const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
-  const { zakazAuth, setZakazAuthorized } = useAppStore();
+  const { setZakazAuthorized } = useAppStore();
   const [step, setStep]                   = useState<"city" | "store" | "login">("city");
   const [selectedCity, setSelectedCity]   = useState<City | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [showCartConnect, setShowCartConnect] = useState(false);
 
   const handleClose = () => { onClose(); setStep("city"); };
 
@@ -133,7 +136,7 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
           {/* Step: login */}
           {step === "login" && selectedStore && (
             <>
-              <div className="glass-card p-4 mb-5">
+              <div className="glass-card p-4 mb-4">
                 <p className="text-xs font-bold text-primary mb-1">{selectedStore.domain} відкрито в браузері</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   1. Увійдіть в акаунт<br />
@@ -146,9 +149,46 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
                 <Check className="w-5 h-5" /> Я увійшов — продовжити
               </button>
               <button onClick={() => openInBrowser(`https://${selectedStore.domain}/uk/`)}
-                className="w-full text-muted-foreground text-sm py-2.5 flex items-center justify-center gap-1.5">
+                className="w-full text-muted-foreground text-sm py-2.5 flex items-center justify-center gap-1.5 mb-3">
                 <ExternalLink className="w-3.5 h-3.5" /> Відкрити знову
               </button>
+
+              {/* Cart connect */}
+              <div className="glass-card p-4">
+                <button
+                  onClick={() => setShowCartConnect(v => !v as boolean)}
+                  className="w-full flex items-center justify-between text-left"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-foreground">🛒 Підключити кошик</p>
+                    <p className="text-xs text-muted-foreground">Додавати товари прямо з додатку</p>
+                  </div>
+                  <span className="text-xs text-primary font-semibold">{showCartConnect ? "▲" : "▼"}</span>
+                </button>
+
+                {showCartConnect && (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Після входу в zakaz.ua перейдіть в ту вкладку і виконайте скрипт:
+                    </p>
+                    <div className="bg-background/60 rounded-xl p-3">
+                      <p className="text-[10px] font-mono text-primary break-all select-all leading-relaxed">
+                        {BOOKMARKLET}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong>Desktop:</strong> скопіюйте та вставте в адресний рядок вкладки zakaz.ua, або збережіть як закладку.<br />
+                      <strong>Mobile:</strong> збережіть як закладку → перейдіть на zakaz.ua → відкрийте закладку.
+                    </p>
+                    <button
+                      onClick={() => navigator.clipboard?.writeText(BOOKMARKLET)}
+                      className="w-full text-xs font-semibold text-primary bg-primary/10 py-2.5 rounded-xl active:bg-primary/20"
+                    >
+                      Скопіювати скрипт
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
