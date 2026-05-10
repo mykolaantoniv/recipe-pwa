@@ -52,6 +52,7 @@ const ZakazProductPicker = ({
   const [addedSet, setAddedSet]       = useState<Set<string>>(new Set());
   const [cartStatus, setCartStatus]   = useState<"idle" | "loading" | "ok" | "err">("idle");
   const [cartSent, setCartSent]       = useState(false);
+  const [sentResults, setSentResults] = useState<IngredientResult[]>([]);
 
   const toggleAdded = (ingredient: string) =>
     setAddedSet(prev => {
@@ -69,12 +70,13 @@ const ZakazProductPicker = ({
     if (addedResults.length === 0) return;
 
     if (!zakazToken) {
-      // No token → open each selected product page
+      // No token → open each selected product page, stay open so user sees cart link
       addedResults.forEach(r => {
         const p = r.products[r.selectedIdx];
         if (p?.url) window.open(p.url, "_blank", "noopener,noreferrer");
       });
-      onAddToCart(addedResults);
+      setSentResults(addedResults);
+      setCartSent(true);
       return;
     }
 
@@ -93,8 +95,8 @@ const ZakazProductPicker = ({
       const data = await res.json();
       if (data.ok) {
         setCartStatus("ok");
+        setSentResults(addedResults);
         setCartSent(true);
-        onAddToCart(addedResults);
       } else {
         console.error("zakaz-cart:", data);
         setCartStatus("err");
@@ -107,7 +109,7 @@ const ZakazProductPicker = ({
   };
 
   return (
-    <Sheet open={open} onOpenChange={o => { if (!o) { onClose(); setAddedSet(new Set()); setCartSent(false); setCartStatus("idle"); } }}>
+    <Sheet open={open} onOpenChange={o => { if (!o) { if (cartSent && sentResults.length > 0) onAddToCart(sentResults); onClose(); setAddedSet(new Set()); setCartSent(false); setCartStatus("idle"); setSentResults([]); } }}>
       <SheetContent
         side="bottom"
         className="h-[92vh] rounded-t-3xl p-0 overflow-y-auto border-t-0 [&>button]:hidden"
@@ -295,9 +297,9 @@ const ZakazProductPicker = ({
         {!searching && (
           <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/30 p-4 space-y-2">
             {cartSent ? (
-              /* After successful cart send */
+              /* After successful cart send — stay open so user can tap the link */
               <button
-                onClick={() => window.open(cartUrl, "_blank", "noopener,noreferrer")}
+                onClick={() => { window.open(cartUrl, "_blank", "noopener,noreferrer"); onClose(); }}
                 className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)]"
               >
                 <ExternalLink className="w-5 h-5" />

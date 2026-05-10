@@ -144,7 +144,6 @@ const ShoppingListPage = () => {
       const item = shoppingList.find((i) => i.name === c.ingredient);
       if (item && !item.checked) toggleShoppingItem(item.id);
     });
-    setShowPicker(false);
   };
 
   return (
