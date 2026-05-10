@@ -51,16 +51,14 @@
       return;
     }
 
+    // Always write localStorage so the installed PWA picks it up when it next opens.
+    // BroadcastChannel is a bonus for browser tabs that are already open.
+    try { localStorage.setItem('reciply_zakaz_token', token); } catch (e) { /* ignore */ }
     try {
-      // Store in sessionStorage first, then move to localStorage via BroadcastChannel
-      // so the token is never sitting in localStorage of this page
       var bc = new BroadcastChannel('zakaz-token');
       bc.postMessage({ token: token });
       bc.close();
-    } catch (e) {
-      // BroadcastChannel not supported — fall back to localStorage
-      try { localStorage.setItem('reciply_zakaz_token', token); } catch (e2) { /* ignore */ }
-    }
+    } catch (e) { /* not supported */ }
 
     icon.textContent  = '✅';
     title.textContent = 'Кошик підключено!';
