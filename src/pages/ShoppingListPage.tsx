@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useAppStore, type ZakazAuth } from "@/store/appStore";
 import { ShoppingCart, Trash2, ShoppingBag, LogIn } from "lucide-react";
 import ZakazAuthSheet from "@/components/ZakazAuthSheet";
@@ -20,6 +20,7 @@ const ShoppingListPage = () => {
   const [showPicker, setShowPicker] = useState(false);
   const [searching, setSearching]   = useState(false);
   const [results, setResults]       = useState<IngredientResult[]>([]);
+  const resultsRef                  = useRef<IngredientResult[]>([]);
   const [storeCtx, setStoreCtx]     = useState({ storeId: '', chain: '' });
 
   const grouped = shoppingList.reduce((acc, item) => {
@@ -48,27 +49,31 @@ const ShoppingListPage = () => {
       page: 1,
       total: 0,
     }));
-    setResults(initial);
+    syncResultsRef(initial);
 
-    const arr = [...initial];
     for (let i = 0; i < unchecked.length; i += 5) {
       const chunk = unchecked.slice(i, i + 5);
-      await Promise.all(
+      const updates = await Promise.all(
         chunk.map(async (item) => {
-          const idx = arr.findIndex((r) => r.ingredient === item.name);
           try {
             const res = await fetch(
               `/api/zakaz-search?q=${encodeURIComponent(item.name)}&storeId=${storeId}&chain=${chain}&per_page=10&page=1`
             );
             const data = await res.json();
-            if (data.error) console.error(`zakaz-search [${item.name}]:`, data.error);
-            arr[idx] = { ...arr[idx], products: data.results || [], loading: false, total: data.count || 0 };
+            return { ingredient: item.name, products: data.results || [], loading: false, total: data.count || 0 };
           } catch {
-            arr[idx] = { ...arr[idx], products: [], loading: false };
+            return { ingredient: item.name, products: [], loading: false, total: 0 };
           }
-          setResults([...arr]);
         })
       );
+      setResults(prev => {
+        const next = prev.map(r => {
+          const u = updates.find(x => x.ingredient === r.ingredient);
+          return u ? { ...r, ...u } : r;
+        });
+        resultsRef.current = next;
+        return next;
+      });
     }
     setSearching(false);
   }, [unchecked]);
@@ -98,25 +103,35 @@ const ShoppingListPage = () => {
     );
   };
 
+  // Keep ref in sync so handleLoadMore can read current page without stale closure
+  const syncResultsRef = (updated: IngredientResult[]) => {
+    resultsRef.current = updated;
+    setResults(updated);
+  };
+
   const handleLoadMore = useCallback(async (ingredient: string) => {
-    setResults((prev) => prev.map((r) => r.ingredient === ingredient ? { ...r, loadingMore: true } : r));
-    const current = results.find((r) => r.ingredient === ingredient);
+    const current = resultsRef.current.find(r => r.ingredient === ingredient);
     if (!current) return;
     const nextPage = current.page + 1;
+    setResults(prev => prev.map(r => r.ingredient === ingredient ? { ...r, loadingMore: true } : r));
     try {
-      const res = await fetch(
+      const res  = await fetch(
         `/api/zakaz-search?q=${encodeURIComponent(ingredient)}&storeId=${storeCtx.storeId}&chain=${storeCtx.chain}&per_page=10&page=${nextPage}`
       );
       const data = await res.json();
-      setResults((prev) => prev.map((r) =>
-        r.ingredient === ingredient
-          ? { ...r, products: [...r.products, ...(data.results || [])], page: nextPage, loadingMore: false }
-          : r
-      ));
+      setResults(prev => {
+        const next = prev.map(r =>
+          r.ingredient === ingredient
+            ? { ...r, products: [...r.products, ...(data.results || [])], page: nextPage, loadingMore: false }
+            : r
+        );
+        resultsRef.current = next;
+        return next;
+      });
     } catch {
-      setResults((prev) => prev.map((r) => r.ingredient === ingredient ? { ...r, loadingMore: false } : r));
+      setResults(prev => prev.map(r => r.ingredient === ingredient ? { ...r, loadingMore: false } : r));
     }
-  }, [results, storeCtx]);
+  }, [storeCtx]);
 
   const handleSkip = (ingredient: string) => {
     setResults((prev) =>

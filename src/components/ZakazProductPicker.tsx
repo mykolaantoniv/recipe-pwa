@@ -201,8 +201,9 @@ const ZakazProductPicker = ({
                           <img
                             src={`/api/zakaz-image?src=${encodeURIComponent(selected.image)}`}
                             alt={selected.title}
+                            loading="lazy"
                             className="w-24 h-24 object-contain rounded-2xl bg-white"
-                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            onError={e => { if (e.target instanceof HTMLImageElement) e.target.style.display = "none"; }}
                           />
                         ) : (
                           <div className="w-24 h-24 rounded-2xl bg-secondary flex items-center justify-center">

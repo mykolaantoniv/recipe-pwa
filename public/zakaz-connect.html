@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Підключення кошика</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #050816; color: #fff;
@@ -20,35 +21,53 @@
   <p id="msg"></p>
 </div>
 <script>
-  const hash = location.hash.slice(1);
-  const params = new URLSearchParams(hash);
-  const token = params.get('token');
+  (function () {
+    var icon  = document.getElementById('icon');
+    var title = document.getElementById('title');
+    var msg   = document.getElementById('msg');
 
-  const icon = document.getElementById('icon');
-  const title = document.getElementById('title');
-  const msg = document.getElementById('msg');
+    var hash   = location.hash.slice(1);
+    var params = new URLSearchParams(hash);
+    var token  = params.get('token');
 
-  if (token) {
-    // Store token via BroadcastChannel so the PWA tab picks it up
+    // Clear token from URL immediately to avoid it lingering in browser history
+    if (history.replaceState) {
+      history.replaceState(null, '', location.pathname);
+    }
+
+    if (!token || typeof token !== 'string' || token.length < 20 || token.length > 4096) {
+      icon.textContent  = '❌';
+      title.textContent = 'Токен не знайдено';
+      msg.textContent   = 'Переконайтесь що ви увійшли в zakaz.ua і спробуйте ще раз.';
+      return;
+    }
+
+    // Basic JWT structure check (three base64 parts separated by dots)
+    var parts = token.split('.');
+    if (parts.length !== 3) {
+      icon.textContent  = '❌';
+      title.textContent = 'Невалідний токен';
+      msg.textContent   = 'Отриманий рядок не схожий на токен авторизації.';
+      return;
+    }
+
     try {
-      const bc = new BroadcastChannel('zakaz-token');
-      bc.postMessage({ token });
+      // Store in sessionStorage first, then move to localStorage via BroadcastChannel
+      // so the token is never sitting in localStorage of this page
+      var bc = new BroadcastChannel('zakaz-token');
+      bc.postMessage({ token: token });
       bc.close();
-    } catch {}
+    } catch (e) {
+      // BroadcastChannel not supported — fall back to localStorage
+      try { localStorage.setItem('reciply_zakaz_token', token); } catch (e2) { /* ignore */ }
+    }
 
-    // Also store in localStorage as fallback
-    localStorage.setItem('reciply_zakaz_token', token);
-
-    icon.textContent = '✅';
+    icon.textContent  = '✅';
     title.textContent = 'Кошик підключено!';
-    msg.textContent = 'Повертаємось в додаток…';
+    msg.textContent   = 'Повертаємось в додаток…';
 
-    setTimeout(() => { location.href = '/'; }, 1200);
-  } else {
-    icon.textContent = '❌';
-    title.textContent = 'Токен не знайдено';
-    msg.textContent = 'Спробуйте ще раз або оберіть "Вставити токен вручну".';
-  }
+    setTimeout(function () { location.href = '/'; }, 1200);
+  })();
 </script>
 </body>
 </html>

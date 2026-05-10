@@ -265,13 +265,29 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "meal-planner-storage",
+      // Explicit allowlist — never accidentally persist new sensitive fields
       partialize: (state) => ({
-        ...state,
+        savedRecipes:          state.savedRecipes,
+        mealPlans:             state.mealPlans,
+        shoppingList:          state.shoppingList,
+        profile:               state.profile,
+        hasSeenPersonalization: state.hasSeenPersonalization,
+        recentIngredients:     state.recentIngredients,
+        zakazAuth:             state.zakazAuth,
+        // zakazToken is intentionally persisted: the bookmarklet flow requires it
+        // to survive page reloads. Accept this known trade-off (same risk as zakaz.ua
+        // storing the same token in their own localStorage).
+        zakazToken:            state.zakazToken,
         auth: {
-          ...state.auth,
-          showAuthModal: false,
-          showSubscription: false,
-          pendingAction: null,
+          isAuthenticated:   state.auth.isAuthenticated,
+          subscriptionStatus: state.auth.subscriptionStatus,
+          subscriptionPlan:  state.auth.subscriptionPlan,
+          trialStartedAt:    state.auth.trialStartedAt,
+          sessionCount:      state.auth.sessionCount,
+          // Never persist UI state or callbacks
+          showAuthModal:     false,
+          showSubscription:  false,
+          pendingAction:     null,
         },
       }),
     }
