@@ -1,5 +1,5 @@
-// Adds products to zakaz.ua cart using the user's Bearer token.
-// Token is extracted once via bookmarklet and stored in the app.
+// Adds products to zakaz.ua cart using the user's session token.
+// Token is obtained via phone+password login and stored in the app.
 
 const VALID_CHAINS  = new Set(['auchan', 'metro', 'novus', 'megamarket']);
 const VALID_STORE   = /^\d{6,12}$/;
@@ -47,22 +47,25 @@ export async function onRequest(context) {
   }
 
   const chainDomain = `${chain}.zakaz.ua`;
+  const cookieHeader = token.startsWith('cookie:')
+    ? token.slice(7)
+    : `__Host-zakaz-sid=${token}`;
 
   try {
-    const res = await fetch(`https://stores-api.zakaz.ua/stores/${storeId}/cart/`, {
+    const res = await fetch(`https://stores-api.zakaz.ua/cart/items/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'x-chain': chain,
+        'x-version': '65',
+        'Cookie': cookieHeader,
         'Referer': `https://${chainDomain}/`,
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-        'Accept-Language': 'uk-UA,uk;q=0.9',
         'Origin': `https://${chainDomain}`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
       body: JSON.stringify({
-        products: products.map(p => ({ ean: p.ean, quantity: Number(p.quantity) })),
-        delivery: { type: 'pickup' },
+        items: products.map(p => ({ ean: p.ean, amount: Number(p.quantity), operation: 'add' })),
       }),
     });
 

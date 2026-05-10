@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Check, ExternalLink, ShoppingBag, ChevronRight } from "lucide-react";
+import { ShoppingBag, ChevronRight, Eye, EyeOff, Loader2 } from "lucide-react";
 
 interface Store { id: string; chain: string; label: string; domain: string; }
 interface City  { city: string; label: string; stores: Store[]; }
@@ -34,33 +34,27 @@ const CHAIN_EMOJI: Record<string, string> = {
   auchan: "🛒", metro: "🏪", novus: "🌿", megamarket: "🏬",
 };
 
-export function openInBrowser(url: string) {
-  const sep = url.includes("?") ? "&" : "?";
-  window.open(`${url}${sep}_t=${Date.now()}`, "_blank", "noopener,noreferrer");
-}
-
 interface Props {
   open: boolean;
   onClose: () => void;
   onAuthorized: (storeId: string, chain: string) => void;
 }
 
-const BOOKMARKLET = `javascript:(function(){var t=null;for(var k in localStorage){var v=localStorage[k];if(typeof v==='string'&&v.length>50&&v.startsWith('eyJ')){t=v;break;}if(typeof v==='string'&&v[0]==='{'){try{var o=JSON.parse(v),keys=['token','access_token','accessToken','authToken','bearer','userToken'];for(var i=0;i<keys.length;i++){if(o[keys[i]]&&typeof o[keys[i]]==='string'&&o[keys[i]].startsWith('eyJ')){t=o[keys[i]];break;}}}catch(e){}}}if(t){location.href='https://reciply.pages.dev/zakaz-connect.html#token='+encodeURIComponent(t);}else{alert('Токен не знайдено. Переконайтесь що ви увійшли в zakaz.ua');}})();`;
-
 const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
-  const { setZakazAuthorized } = useAppStore();
+  const { setZakazAuthorized, setZakazToken } = useAppStore();
   const [step, setStep]                   = useState<"city" | "store" | "login">("city");
   const [selectedCity, setSelectedCity]   = useState<City | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard?.writeText(BOOKMARKLET);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const [phone, setPhone]               = useState("");
+  const [password, setPassword]         = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError]     = useState("");
 
-  const handleClose = () => { onClose(); setStep("city"); };
+  const resetLoginForm = () => { setPhone(""); setPassword(""); setLoginError(""); setShowPassword(false); };
+
+  const handleClose = () => { onClose(); setStep("city"); resetLoginForm(); };
 
   const handleCity = (city: City) => {
     setSelectedCity(city);
@@ -69,18 +63,38 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
 
   const handleStore = (store: Store) => {
     setSelectedStore(store);
+    resetLoginForm();
     setStep("login");
-    openInBrowser(`https://${store.domain}/uk/`);
   };
 
-  const handleConfirm = () => {
-    if (!selectedStore) return;
-    setZakazAuthorized(selectedStore.id, selectedStore.chain, selectedStore.domain, selectedStore.label);
-    onAuthorized(selectedStore.id, selectedStore.chain);
-    setStep("city");
+  const handleLoginSubmit = async () => {
+    if (!selectedStore || !phone.trim() || !password) return;
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const res  = await fetch("/api/zakaz-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chain: selectedStore.chain, phone: phone.trim(), password }),
+      });
+      const data = await res.json();
+      if (data.ok && data.token) {
+        setZakazAuthorized(selectedStore.id, selectedStore.chain, selectedStore.domain, selectedStore.label);
+        setZakazToken(data.token);
+        onAuthorized(selectedStore.id, selectedStore.chain);
+        setStep("city");
+        resetLoginForm();
+      } else {
+        setLoginError("Невірний номер телефону або пароль");
+      }
+    } catch {
+      setLoginError("Помилка з'єднання — спробуйте ще раз");
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
-  const title = step === "city" ? "Ваше місто" : step === "store" ? selectedCity?.label ?? "" : "Увійдіть";
+  const title = step === "city" ? "Ваше місто" : step === "store" ? selectedCity?.label ?? "" : selectedStore?.label ?? "Вхід";
 
   return (
     <Sheet open={open} onOpenChange={o => !o && handleClose()}>
@@ -130,56 +144,77 @@ const ZakazAuthSheet = ({ open, onClose, onAuthorized }: Props) => {
                       <p className="font-semibold text-foreground">{store.label}</p>
                       <p className="text-xs text-muted-foreground">{store.domain}</p>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-primary font-semibold">
-                      Увійти <ExternalLink className="w-3 h-3" />
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
                 ))}
               </div>
             </>
           )}
 
-          {/* Step: login */}
+          {/* Step: login — phone + password form */}
           {step === "login" && selectedStore && (
             <div className="space-y-3">
-              {/* Step 1 */}
-              <div className="glass-card p-4">
-                <p className="text-[11px] font-bold text-primary uppercase tracking-wide mb-1">Крок 1 · Вхід</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Увійдіть у свій акаунт на {selectedStore.domain}
-                </p>
-                <button onClick={() => openInBrowser(`https://${selectedStore.domain}/uk/`)}
-                  className="mt-2.5 text-xs text-primary flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3" /> Відкрити знову
-                </button>
+              <button onClick={() => setStep("store")} className="text-xs text-primary mb-1 flex items-center gap-1">← назад</button>
+
+              <p className="text-sm text-muted-foreground">
+                Введіть дані від акаунту {selectedStore.domain}
+              </p>
+
+              {/* Phone */}
+              <div className="glass-card rounded-2xl overflow-hidden">
+                <input
+                  type="tel"
+                  placeholder="Номер телефону (0XXXXXXXXX)"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  className="w-full bg-transparent px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
               </div>
 
-              {/* Step 2: cart connect — always visible */}
-              <div className="glass-card p-4">
-                <p className="text-[11px] font-bold text-primary uppercase tracking-wide mb-1">Крок 2 · Підключити кошик</p>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                  Скопіюйте скрипт і вставте в адресний рядок вкладки {selectedStore.domain}. Він перенаправить вас назад з токеном.
-                </p>
-                <div className="bg-background/60 rounded-xl p-3 mb-3">
-                  <p className="text-[10px] font-mono text-primary break-all select-all leading-relaxed">
-                    {BOOKMARKLET}
-                  </p>
-                </div>
+              {/* Password */}
+              <div className="glass-card rounded-2xl overflow-hidden flex items-center">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Пароль"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleLoginSubmit()}
+                  className="flex-1 bg-transparent px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
                 <button
-                  onClick={handleCopy}
-                  className="w-full text-xs font-semibold text-primary bg-primary/10 py-2.5 rounded-xl active:bg-primary/20"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="px-3 text-muted-foreground"
+                  type="button"
                 >
-                  {copied ? "Скопійовано ✓" : "Скопіювати скрипт"}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                  Mobile: збережіть як закладку → перейдіть на {selectedStore.domain} → відкрийте закладку.
-                </p>
               </div>
 
-              <button onClick={handleConfirm}
-                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98]">
-                <Check className="w-5 h-5" /> Готово
+              {loginError && (
+                <p className="text-xs text-destructive text-center">{loginError}</p>
+              )}
+
+              <button
+                onClick={handleLoginSubmit}
+                disabled={loginLoading || !phone.trim() || !password}
+                className="w-full bg-primary text-primary-foreground font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-60"
+              >
+                {loginLoading
+                  ? <><Loader2 className="w-5 h-5 animate-spin" /> Входимо…</>
+                  : "Увійти та підключити кошик"}
               </button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Немає акаунту?{" "}
+                <a
+                  href={`https://${selectedStore.domain}/uk/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  Зареєструватись
+                </a>
+              </p>
             </div>
           )}
         </div>
