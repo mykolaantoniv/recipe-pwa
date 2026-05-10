@@ -138,6 +138,7 @@ const ZakazProductPicker = ({
                           <img
                             src={selected.image}
                             alt={selected.title}
+                            referrerPolicy="no-referrer"
                             className="w-24 h-24 object-contain rounded-2xl bg-white"
                             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
                           />
