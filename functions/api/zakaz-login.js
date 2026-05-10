@@ -32,41 +32,50 @@ export async function onRequestPost({ request }) {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
   };
 
-  // Try multiple credential field names — zakaz.ua accepts both `phone` and `login`,
-  // and some accounts use email. Mirror the BalanceBite approach.
+  // API requires `login` field (not `phone`). Try normalized and raw forms.
   const attempts = [
-    { phone: normalized, password },
     { login: normalized, password },
-    { phone: phone.trim(), password },      // as entered, un-normalized
     { login: phone.trim(), password },
   ];
 
   for (const credentials of attempts) {
+    let res;
     try {
-      const res = await fetch('https://stores-api.zakaz.ua/user/login', {
+      res = await fetch('https://stores-api.zakaz.ua/user/login', {
         method: 'POST',
         headers,
         body: JSON.stringify(credentials),
       });
+    } catch {
+      continue;
+    }
 
-      const text = await res.text();
-      let data = {};
-      try { data = JSON.parse(text); } catch { /* not json */ }
+    if (!res.ok) continue;
 
-      if (!res.ok) continue;
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch { /* not json */ }
 
-      // Token in response body
-      const token = data?.token || data?.access_token || data?.sessionid || data?.key;
-      if (token) return Response.json({ ok: true, token: String(token) });
+    // Token in response body
+    const bodyToken = data?.token || data?.access_token || data?.sessionid || data?.key;
+    if (bodyToken) return Response.json({ ok: true, token: String(bodyToken) });
 
-      // Cookie-based session
-      const setCookie = res.headers.get('set-cookie');
-      if (setCookie) {
-        const sidMatch = setCookie.match(/(?:__Host-)?zakaz[_-]?sid=([^;,\s]+)/i);
-        if (sidMatch?.[1]) return Response.json({ ok: true, token: sidMatch[1] });
-        return Response.json({ ok: true, token: `cookie:${setCookie}` });
-      }
-    } catch { /* network error on this attempt, try next */ }
+    // Read ALL Set-Cookie values — Cloudflare Workers may return them combined
+    const rawCookie = res.headers.get('set-cookie');
+    if (rawCookie) {
+      // Try to extract zakaz session cookie
+      const sidMatch = rawCookie.match(/(?:__Host-)?zakaz[_-]?sid=([^;,\s]+)/i);
+      if (sidMatch?.[1]) return Response.json({ ok: true, token: sidMatch[1] });
+      // Return entire cookie string as token — zakaz-cart.js knows how to use it
+      return Response.json({ ok: true, token: `cookie:${rawCookie}` });
+    }
+
+    // Login succeeded but no token found — return whatever user_id we got for debugging
+    if (data?.user_id) {
+      return Response.json({ ok: false, error: 'no_token', hint: 'login_ok_no_cookie' }, { status: 401 });
+    }
+
+    // Unknown success format — continue to next attempt
   }
 
   return Response.json({ ok: false, error: 'auth_failed' }, { status: 401 });
