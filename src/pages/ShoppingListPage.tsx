@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { useAppStore, type ZakazAuth } from "@/store/appStore";
-import { ShoppingCart, Trash2, ShoppingBag, LogIn } from "lucide-react";
+import { ShoppingCart, Trash2, ShoppingBag, LogIn, Link2 } from "lucide-react";
 import ZakazAuthSheet from "@/components/ZakazAuthSheet";
 import ZakazProductPicker, { IngredientResult } from "@/components/ZakazProductPicker";
 
@@ -195,6 +195,15 @@ const ShoppingListPage = () => {
                     змінити
                   </button>
                 </p>
+              )}
+              {zakazAuth.authorized && !zakazToken && (
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-400/10 py-2.5 rounded-xl active:bg-amber-400/20"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  Підключити кошик для прямого додавання
+                </button>
               )}
             </div>
           )}
