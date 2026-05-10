@@ -41,6 +41,7 @@ const ShoppingListPage = () => {
       loading: true,
       selectedIdx: 0,
       skipped: false,
+      quantity: 1,
     }));
     setResults(initial);
 
@@ -83,6 +84,12 @@ const ShoppingListPage = () => {
   const handleSelect = (ingredient: string, idx: number) => {
     setResults((prev) =>
       prev.map((r) => r.ingredient === ingredient ? { ...r, selectedIdx: idx } : r)
+    );
+  };
+
+  const handleSetQuantity = (ingredient: string, qty: number) => {
+    setResults((prev) =>
+      prev.map((r) => r.ingredient === ingredient ? { ...r, quantity: qty } : r)
     );
   };
 
@@ -190,7 +197,7 @@ const ShoppingListPage = () => {
       )}
 
       <ZakazAuthSheet open={showAuth} onClose={() => setShowAuth(false)} onAuthorized={handleAuthorized} />
-      <ZakazProductPicker open={showPicker} results={results} onSelect={handleSelect} onSkip={handleSkip} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
+      <ZakazProductPicker open={showPicker} results={results} storeLabel={zakazAuth.storeLabel} onSelect={handleSelect} onSkip={handleSkip} onSetQuantity={handleSetQuantity} onAddToCart={handleAddToCart} onClose={() => setShowPicker(false)} searching={searching} />
     </div>
   );
 };
